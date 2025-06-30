@@ -1,0 +1,68 @@
+#cloud-config
+users:
+  - name: dev
+    uid: 1000
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - SSH_PUBLIC_KEY_PLACEHOLDER
+
+package_update: true
+packages:
+    - libboost-all-dev
+    - flatbuffers-compiler
+    - libflatbuffers-dev
+    - libprotobuf-dev
+    - libgrpc++-dev
+    - linux-tools-common
+    - libspdlog-dev
+    - libmaxminddb-dev
+    - libbpf-dev
+    - libbpf-tools
+    - libgtest-dev
+    - make
+    - flex
+    - bison
+    # The 5.10.35 kernel requires gcc-11.
+    - gcc-11
+    - g++-11
+    - libssl-dev
+    - bc
+    - fakeroot
+    - dwarves
+    - libelf-dev
+    - lz4
+    - build-essential
+    - cmake
+    - ninja-build
+    - libfmt-dev
+    - kdump-tools
+    - msr-tools
+
+mounts:
+  - [ "linux-6.12.12-tfw", "/home/dev/linux-6.12.12-tfw",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+  - [ "linux-5.10.35-tfw", "/home/dev/linux-5.10.35-tfw",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+  - [ "tempesta", "/home/dev/tempesta",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+  - [ "scripts", "/home/dev/scripts",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+
+runcmd:
+  # In the "mounts" section, we specify uid=1000 and gid=1000, and we also explicitly
+  # set the dev user's uid to 1000. Unfortunately, cloud-init does not provide a way
+  # to set the GID of the dev group to 1000. Therefore, we must do it manually.
+  # See https://github.com/canonical/cloud-init/issues/2314.
+  - groupmod -g 1000 dev
+
+  # In the "mounts" section, we use paths within the /home/dev directory as mount points.
+  # Consequently, the dev user's home directory is created before the user is created,
+  # and the "useradd" utility does not copy files from the "skel" directory to the home
+  # directory in this case. Therefore, we must copy the files manually.
+  - chown dev:dev /home/dev
+  - sudo -u dev cp -r /etc/skel/. /home/dev
+
+  - cd /home/dev/scripts
+  - sudo -u dev ./build-kernel.sh --kernel-dir /home/dev/linux-5.10.35-tfw
+  - sudo -u dev ./install-kernel.sh ../linux-headers-*.deb ../linux-image-*.deb

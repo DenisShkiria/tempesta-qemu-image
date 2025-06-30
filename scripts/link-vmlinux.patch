@@ -1,0 +1,13 @@
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -217,7 +217,9 @@ mksysmap()
+ 
+ sorttable()
+ {
+-	${objtree}/scripts/sorttable ${1}
++	cp ${1} /tmp/.${1}
++	${objtree}/scripts/sorttable /tmp/.${1}
++	cp /tmp/.${1} ${1}
+ }
+ 
+ # Delete output files in case of error 
