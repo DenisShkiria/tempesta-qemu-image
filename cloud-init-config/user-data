@@ -1,5 +1,60 @@
 #cloud-config
-password: ubuntu
 ssh_pwauth: true
+password: ubuntu
 chpasswd:
   expire: false
+
+package_update: true
+package_upgrade: true
+
+packages:
+    - make
+    - git
+    - clang
+    - libboost-all-dev
+    - flatbuffers-compiler
+    - libflatbuffers-dev
+    - libprotobuf-dev
+    - libgrpc++-dev
+    - linux-tools-common
+    - libspdlog-dev
+    - libmaxminddb-dev
+    - libbpf-dev
+    - libbpf-tools
+    - libgtest-dev
+
+mounts:
+  - [ "kernel", "/home/ubuntu/kernel",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+  - [ "tempesta", "/home/ubuntu/tempesta",
+      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+
+write_files:
+  - path: /home/ubuntu/build-kernel.sh
+    content: |
+      #!/bin/bash
+      set -e
+      cd /home/ubuntu/kernel
+
+      # Prepare kernel config
+      make clean && make mrproper
+      cp /boot/config-$(uname -r) .config
+      sed -i 's/CONFIG_SYSTEM_TRUSTED_KEYRING/#CONFIG_SYSTEM_TRUSTED_KEYRING/' .config
+      sed -i 's/CONFIG_SYSTEM_TRUSTED_KEYS/#CONFIG_SYSTEM_TRUSTED_KEYS/' .config
+      sed -i 's/CONFIG_DEFAULT_SECURITY_/#CONFIG_DEFAULT_SECURITY_/' .config
+      sed -i 's/CONFIG_LSM=/#CONFIG_LSM=/' .config
+      sed -i 's/CONFIG_DEBUG_INFO_BTF=/#CONFIG_DEBUG_INFO_BTF=/' .config
+      echo 'CONFIG_LSM="tempesta,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf"' >> .config
+      make olddefconfig
+
+      echo "Kernel config:"
+      cat .config
+
+      echo "Build .deb for kernel"
+      make deb-pkg -j$(nproc)
+    permissions: '0755'
+    owner: ubuntu:ubuntu
+    defer: true
+
+runcmd:
+  - sudo -u ubuntu /home/ubuntu/build-kernel.sh

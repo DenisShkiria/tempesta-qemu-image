@@ -1,0 +1,7 @@
+[submodule "kernel"]
+	path = kernel
+	url = https://github.com/tempesta-tech/linux-5.10.35-tfw.git
+	shallow = true
+[submodule "tempesta"]
+	path = tempesta
+	url = https://github.com/tempesta-tech/tempesta.git
