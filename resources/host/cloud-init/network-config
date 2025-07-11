@@ -4,5 +4,4 @@ ethernets:
     dhcp4: true
     nameservers:
       addresses:
-        - 8.8.8.8
-        - 8.8.4.4
+        - 192.168.123.1

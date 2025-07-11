@@ -1,16 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly CLOUD_INIT_LOG="/var/log/cloud-init-output.log"
 readonly MAX_WAIT_ATTEMPTS=5
 
-log_info() {
-    echo "[INFO] $*" >&2
-}
-
-log_error() {
-    echo "[ERROR] $*" >&2
-}
+# Source shared library
+source "${SCRIPT_DIR}/lib.sh"
 
 find_cloud_init_pid() {
     pgrep -f "python.*cloud-init" | head -1

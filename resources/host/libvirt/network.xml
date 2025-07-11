@@ -1,0 +1,17 @@
+<!-- https://libvirt.org/format.html -->
+<network>
+  <name>tempesta-net</name>
+  <forward mode="nat"/>
+  <bridge name="virbr-tempesta" stp="on" delay="0"/>
+  <ip address="192.168.123.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.123.10" end="192.168.123.20"/>
+      <!-- Static IP reservations -->
+      <host mac="52:54:00:12:34:56" name="tempesta-fw" ip="192.168.123.10"/>
+      <host mac="52:54:00:12:34:65" name="tempesta-test" ip="192.168.123.11"/>
+    </dhcp>
+  </ip>
+  <dns>
+    <forwarder addr="8.8.8.8"/>
+  </dns>
+</network>

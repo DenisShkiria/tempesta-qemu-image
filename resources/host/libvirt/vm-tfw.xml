@@ -1,0 +1,81 @@
+<!-- https://libvirt.org/format.html -->
+<domain type='kvm'>
+  <name>tempesta-fw</name>
+  <memory unit='GB'>4</memory>
+  <vcpu placement='static'>4</vcpu>
+  <cpu mode='host-passthrough'>
+    <feature policy='require' name='vmx'/>
+  </cpu>
+  <os>
+    <type arch='x86_64' machine='pc'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+  <devices>
+    <!-- Main disk drive (virtio) -->
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='PATH_TO_DISK_IMAGE_PLACEMENT'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    
+    <!-- Cloud-init seed ISO (virtio) -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='PATH_TO_SEED_ISO_PLACEMENT'/>
+      <target dev='vdb' bus='virtio'/>
+    </disk>
+    
+    <!-- Network interface using custom network -->
+    <interface type='network'>
+      <source network='tempesta-net'/>
+      <mac address='52:54:00:12:34:56'/>
+      <model type='virtio'/>
+    </interface>
+    
+    <!-- VirtFS mounts -->
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='PATH_TO_KERNEL_PLACEMENT'/>
+      <target dir='kernel'/>
+    </filesystem>
+    
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='PATH_TO_TEMPESTA_PLACEMENT'/>
+      <target dir='tempesta'/>
+    </filesystem>
+    
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='PATH_TO_RESOURCES_PLACEMENT'/>
+      <target dir='resources'/>
+    </filesystem>
+    
+    <!-- Serial console -->
+    <serial type='file'>
+      <source path='PATH_TO_SERIAL_LOG_PLACEMENT'/>
+      <target port='0'/>
+    </serial>
+    <console type='file'>
+      <source path='PATH_TO_SERIAL_LOG_PLACEMENT'/>
+      <target type='serial' port='0'/>
+    </console>
+    
+    <!-- Disable video -->
+    <video>
+      <model type='none'/>
+    </video>
+    
+    <!-- Memory ballooning -->
+    <memballoon model='virtio'/>
+  </devices>
+</domain> 

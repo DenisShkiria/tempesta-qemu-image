@@ -12,113 +12,89 @@ CLOUD_IMAGE_URL := "https://cloud-images.ubuntu.com/noble/20250610/noble-server-
 
 ARTIFACTS_DIR := artifacts
 CLOUD_IMAGE_FILE := $(ARTIFACTS_DIR)/cloud-image.qcow2
-IMAGE_FILE := $(ARTIFACTS_DIR)/tempesta-fw.qcow2
-SEED_ISO := $(ARTIFACTS_DIR)/seed.iso
-SSH_KEY := $(ARTIFACTS_DIR)/id_rsa
+IMAGE_FILE_TFW := $(ARTIFACTS_DIR)/tempesta-fw.qcow2
+IMAGE_FILE_TEST := $(ARTIFACTS_DIR)/tempesta-test.qcow2
+SEED_ISO_TFW := $(ARTIFACTS_DIR)/seed-tfw.iso
+SEED_ISO_TEST := $(ARTIFACTS_DIR)/seed-test.iso
+SSH_KEY := resources/host/ssh/id_rsa
 
-# SSH connection configuration
-SSH_WAIT_ATTEMPTS := 30
-GRACEFUL_SHUTDOWN_ATTEMPTS := 10
-SSH_PORT := 2222
-SSH_CONNECT := ssh -i $(SSH_KEY) -p $(SSH_PORT) \
-	-o StrictHostKeyChecking=no \
-	-o UserKnownHostsFile=/dev/null \
-	-o LogLevel=ERROR \
-	dev@localhost
-
-# VM configuration
-VM_MEMORY := 4096
-VM_CPUS := 4
 VM_DISK_SIZE := +50G
 
 clean:
 	rm -rf $(ARTIFACTS_DIR)
 
-ssh-connect:
-	@$(SSH_CONNECT) || true
+.PHONY: ssh-to-tfw
+ssh-to-tfw:
+	@resources/host/vm.sh --ssh-to-tfw
 
-build-and-run: $(IMAGE_FILE)
-	@echo "Starting VM in background..."
-	@$(MAKE) run-vm-in-background
+.PHONY: ssh-to-test
+ssh-to-test:
+	@resources/host/vm.sh --ssh-to-test
 
-	@echo "Connecting to VM over SSH..."
-	@$(MAKE) ssh-connect
+.PHONY: build-and-start-tfw
+build-and-start-tfw: $(IMAGE_FILE_TFW)
+	@$(MAKE) start-vm-tfw
+	@$(MAKE) ssh-to-tfw
+	@$(MAKE) shutdown-vm-tfw
 
-	@$(MAKE) shutdown-vm
+.PHONY: build-and-start-test
+build-and-start-test: $(IMAGE_FILE_TEST)
+	@$(MAKE) start-vm-test
+	@$(MAKE) ssh-to-test
+	@$(MAKE) shutdown-vm-test
 
-shutdown-vm:
-	@echo "Shutting down VM gracefully..."
-	@$(SSH_CONNECT) 'sudo shutdown now' || true
+.PHONY: shutdown-vm-tfw
+shutdown-vm-tfw:
+	@resources/host/vm.sh --stop-vm-tfw
 
-	@if [ -f $(ARTIFACTS_DIR)/qemu.pid ]; then \
-		vm_pid=$$(cat $(ARTIFACTS_DIR)/qemu.pid); \
-		echo "Waiting for VM to shutdown gracefully..."; \
-		for i in $$(seq 1 $(GRACEFUL_SHUTDOWN_ATTEMPTS)); do \
-			if ! kill -0 $$vm_pid 2>/dev/null; then \
-				echo "VM has shut down gracefully"; \
-				break; \
-			fi; \
-			echo "Waiting for shutdown ($$i/$(GRACEFUL_SHUTDOWN_ATTEMPTS))..."; \
-			sleep 1; \
-		done; \
-		if kill -0 $$vm_pid 2>/dev/null; then \
-			echo "VM did not shut down gracefully, force killing..."; \
-			kill -9 $$vm_pid 2>/dev/null || true; \
-			echo "VM process killed"; \
-		fi; \
-		rm -f $(ARTIFACTS_DIR)/qemu.pid; \
-	else \
-		echo "No VM pidfile found"; \
-	fi;
+.PHONY: shutdown-vm-test
+shutdown-vm-test:
+	@resources/host/vm.sh --stop-vm-test
 
-run-vm-in-background:
-	@qemu-system-x86_64 \
-		-cpu host \
-		-enable-kvm \
-		-m $(VM_MEMORY) \
-		-smp $(VM_CPUS) \
-		-drive if=virtio,format=qcow2,file=$(IMAGE_FILE) \
-		-drive if=virtio,format=raw,file=$(SEED_ISO) \
-		-netdev type=user,id=net0,hostfwd=tcp::$(SSH_PORT)-:22 \
-		-device virtio-net-pci,netdev=net0 \
-		-virtfs local,path=$(PWD)/linux-6.12.12-tfw,mount_tag=linux-6.12.12-tfw,security_model=passthrough,id=linux-6.12.12-tfw \
-		-virtfs local,path=$(PWD)/linux-5.10.35-tfw,mount_tag=linux-5.10.35-tfw,security_model=passthrough,id=linux-5.10.35-tfw \
-		-virtfs local,path=$(PWD)/tempesta,mount_tag=tempesta,security_model=passthrough,id=tempesta \
-		-virtfs local,path=$(PWD)/scripts,mount_tag=scripts,security_model=passthrough,id=scripts \
-		-serial file:$(ARTIFACTS_DIR)/qemu-serial.log \
-		-display none \
-		-pidfile $(ARTIFACTS_DIR)/qemu.pid \
-		-daemonize
+.PHONY: start-vm-tfw
+start-vm-tfw:
+	@resources/host/vm.sh --start-vm-tfw \
+		$(IMAGE_FILE_TFW) \
+		$(SEED_ISO_TFW) \
+		$(PWD)/linux-5.10.35-tfw \
+		$(PWD)/tempesta \
+		$(PWD)/resources/guest
 
-	@echo "Waiting for VM to be ready for SSH connections..."
-	@ssh_ready=false; \
-	for i in $$(seq 1 $(SSH_WAIT_ATTEMPTS)); do \
-		if $(SSH_CONNECT) 'exit 0' 2>/dev/null; then \
-			echo "VM ready for SSH connections!"; \
-			ssh_ready=true; \
-			break; \
-		fi; \
-		echo "Waiting for VM to be ready for SSH connections ($$i/$(SSH_WAIT_ATTEMPTS))..."; \
-		sleep 1; \
-	done; \
-	if [ "$$ssh_ready" = "false" ]; then \
-		echo "ERROR: Could not establish SSH connection after $(SSH_WAIT_ATTEMPTS) attempts"; \
-		$(MAKE) shutdown-vm || true; \
-		exit 1; \
-	fi
+.PHONY: start-vm-test
+start-vm-test:
+# TODO: add test path
+	@resources/host/vm.sh --start-vm-test \
+		$(IMAGE_FILE_TEST) \
+		$(SEED_ISO_TEST) \
+		$(PWD)/resources/guest
 
-$(IMAGE_FILE): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO)
+$(IMAGE_FILE_TEST): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TEST)
 	@mkdir -p $(dir $@)
 	@cp $(CLOUD_IMAGE_FILE) $@
 	@qemu-img resize $@ $(VM_DISK_SIZE)
 
 	@echo "Starting VM to trigger cloud-init..."
-	@$(MAKE) run-vm-in-background
+	@$(MAKE) start-vm-test
 
 	@echo "Connecting to VM over SSH..."
-	@$(SSH_CONNECT) 'bash -s' < $(PWD)/scripts/monitor-cloud-init.sh || true
+	@resources/host/vm.sh --ssh-to-test \
+		"bash -s < $(PWD)/resources/host/monitor-cloud-init.sh" || true
 
-	@$(MAKE) shutdown-vm
+	@resources/host/vm.sh --stop-vm-test
+
+$(IMAGE_FILE_TFW): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TFW)
+	@mkdir -p $(dir $@)
+	@cp $(CLOUD_IMAGE_FILE) $@
+	@qemu-img resize $@ $(VM_DISK_SIZE)
+
+	@echo "Starting VM to trigger cloud-init..."
+	@$(MAKE) start-vm-tfw
+
+	@echo "Connecting to VM over SSH..."
+	@resources/host/vm.sh --ssh-to-tfw \
+		"bash -s < $(PWD)/resources/host/monitor-cloud-init.sh" || true
+
+	@resources/host/vm.sh --stop-vm-tfw
 
 $(CLOUD_IMAGE_FILE).checked: $(CLOUD_IMAGE_FILE)
 	@echo "Verifying cloud image checksum..."
@@ -136,23 +112,24 @@ $(CLOUD_IMAGE_FILE):
 	@mkdir -p $(dir $@)
 	@curl -L -o $@ $(CLOUD_IMAGE_URL)
 
-$(SSH_KEY):
-	@echo "Generating SSH key pair..."
+$(SEED_ISO_TEST): $(SSH_KEY) $(SSH_KEY).pub resources/host/cloud-init/network-config resources/host/cloud-init/test/*
+	@echo "Creating cloud-init ISO for test VM..."
 	@mkdir -p $(dir $@)
-	@ssh-keygen -t rsa -b 2048 -f $@ -N "" -C "tempesta-vm-key"
-	@echo "SSH key pair generated: $@ and $@.pub"
-
-$(SEED_ISO): cloud-init-config/* $(SSH_KEY)
-	@echo "Creating cloud-init ISO with SSH public key..."
-	@mkdir -p $(dir $@)
-	@sed "s|SSH_PUBLIC_KEY_PLACEHOLDER|$$(cat $(SSH_KEY).pub)|g" \
-		cloud-init-config/user-data > $(ARTIFACTS_DIR)/user-data
 	@genisoimage -output $@ \
 		-volid cidata \
 		-joliet -rock \
 		-input-charset utf-8 \
-		$(ARTIFACTS_DIR)/user-data \
-		cloud-init-config/meta-data \
-		cloud-init-config/network-config
+		resources/host/cloud-init/test/user-data \
+		resources/host/cloud-init/test/meta-data \
+		resources/host/cloud-init/network-config
 
-.PHONY: build-and-run run-vm-in-background shutdown-vm ssh-connect clean
+$(SEED_ISO_TFW): $(SSH_KEY) $(SSH_KEY).pub resources/host/cloud-init/network-config resources/host/cloud-init/tfw/*
+	@echo "Creating cloud-init ISO for TFW VM..."
+	@mkdir -p $(dir $@)
+	@genisoimage -output $@ \
+		-volid cidata \
+		-joliet -rock \
+		-input-charset utf-8 \
+		resources/host/cloud-init/tfw/user-data \
+		resources/host/cloud-init/tfw/meta-data \
+		resources/host/cloud-init/network-config
