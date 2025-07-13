@@ -1,11 +1,26 @@
 # Makefile for building Tempesta FW kernel in QEMU VM
 # 
 # Available targets:
-#   build-and-run        - Build VM image if needed, start VM in background and connect to it over SSH.
-#   run-vm-in-background - Start VM in background.
-#   shutdown-vm          - Shutdown VM if it's running.
-#   ssh-connect          - Connect to VM over SSH. The VM should be running.
-#   clean                - Remove all artifacts.
+#   build-and-start-tfw  - Build TFW VM image if needed, start VM and connect to it over SSH.
+#   build-and-start-test - Build Test VM image if needed, start VM and connect to it over SSH.
+#   ssh-to-tfw           - Connect to TFW VM over SSH. The VM should be running.
+#   ssh-to-test          - Connect to Test VM over SSH. The VM should be running.
+#   start-vm-tfw         - Start TFW VM.
+#   start-vm-test        - Start Test VM.
+#   shutdown-vm-tfw      - Shutdown TFW VM.
+#   shutdown-vm-test     - Shutdown Test VM.
+#   shutdown-all         - Shutdown all VMs and destroy virtual network.
+#
+# Variables:
+#   KERNEL_PATH          - Path to the kernel directory (default: $(PWD)/../linux-5.10.35-tfw)
+#   TEMPESTA_PATH        - Path to the Tempesta directory (default: $(PWD)/../tempesta)
+#   TEST_PATH            - Path to the test directory (default: $(PWD)/../tempesta-test)
+
+KERNEL_PATH ?= $(PWD)/../linux-5.10.35-tfw
+TEMPESTA_PATH ?= $(PWD)/../tempesta
+TEST_PATH ?= $(PWD)/../tempesta-test
+
+export KERNEL_PATH TEMPESTA_PATH TEST_PATH
 
 CLOUD_IMAGE_CHECKSUM := "92d2c4591af9a82785464bede56022c49d4be27bde1bdcf4a9fccc62425cda43"
 CLOUD_IMAGE_URL := "https://cloud-images.ubuntu.com/noble/20250610/noble-server-cloudimg-amd64.img"
@@ -20,8 +35,11 @@ SSH_KEY := resources/host/ssh/id_rsa
 
 VM_DISK_SIZE := +50G
 
-clean:
-	rm -rf $(ARTIFACTS_DIR)
+.PHONY: shutdown-all
+shutdown-all:
+	@$(MAKE) shutdown-vm-tfw
+	@$(MAKE) shutdown-vm-test
+	@resources/host/vm.sh --destroy-network
 
 .PHONY: ssh-to-tfw
 ssh-to-tfw:
@@ -56,17 +74,16 @@ start-vm-tfw:
 	@resources/host/vm.sh --start-vm-tfw \
 		$(IMAGE_FILE_TFW) \
 		$(SEED_ISO_TFW) \
-		$(PWD)/linux-5.10.35-tfw \
-		$(PWD)/tempesta \
+		$(KERNEL_PATH) \
+		$(TEMPESTA_PATH) \
 		$(PWD)/resources/guest
 
 .PHONY: start-vm-test
 start-vm-test:
-# TODO: add test path
 	@resources/host/vm.sh --start-vm-test \
 		$(IMAGE_FILE_TEST) \
 		$(SEED_ISO_TEST) \
-		$(PWD)/resources/guest
+		$(TEST_PATH)
 
 $(IMAGE_FILE_TEST): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TEST)
 	@mkdir -p $(dir $@)
@@ -80,7 +97,7 @@ $(IMAGE_FILE_TEST): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TEST)
 	@resources/host/vm.sh --ssh-to-test \
 		"bash -s < $(PWD)/resources/host/monitor-cloud-init.sh" || true
 
-	@resources/host/vm.sh --stop-vm-test
+	@$(MAKE) shutdown-vm-test
 
 $(IMAGE_FILE_TFW): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TFW)
 	@mkdir -p $(dir $@)
@@ -94,7 +111,7 @@ $(IMAGE_FILE_TFW): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TFW)
 	@resources/host/vm.sh --ssh-to-tfw \
 		"bash -s < $(PWD)/resources/host/monitor-cloud-init.sh" || true
 
-	@resources/host/vm.sh --stop-vm-tfw
+	@$(MAKE) shutdown-vm-tfw
 
 $(CLOUD_IMAGE_FILE).checked: $(CLOUD_IMAGE_FILE)
 	@echo "Verifying cloud image checksum..."
