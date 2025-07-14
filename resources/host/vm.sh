@@ -37,13 +37,7 @@ connect_over_ssh() {
         -o "LogLevel=ERROR"
     )
     
-    if [[ -n "$ssh_command" ]]; then
-        # Non-interactive mode with command
-        ssh "${ssh_options[@]}" "$SSH_USER@$ip_address" "$ssh_command" 2>/dev/null
-    else
-        # Interactive mode
-        ssh "${ssh_options[@]}" "$SSH_USER@$ip_address"
-    fi
+    ssh "${ssh_options[@]}" "$SSH_USER@$ip_address" "$ssh_command"
 }
 
 show_help() {
@@ -61,10 +55,10 @@ NETWORK OPTIONS:
     --destroy-network   Destroy the virtual network
 
 VM OPTIONS:
-    --start-vm-tfw <disk_image> <seed_iso> <kernel_path> <tempesta_path> <resources_path>
+    --start-vm-tfw <disk_image> <seed_iso> <resources_path> <kernel_path> <tempesta_path>
                         Start the Tempesta FW VM with specified paths
     --stop-vm-tfw       Stop the Tempesta FW VM
-    --start-vm-test <disk_image> <seed_iso> <test_path>
+    --start-vm-test <disk_image> <seed_iso> <resources_path> <test_path>
                         Start the Tempesta Test VM with specified paths
     --stop-vm-test      Stop the Tempesta Test VM
     --ssh-to-tfw [command]
@@ -99,7 +93,7 @@ create_network() {
     
     # Check if network already exists
     if network_exists; then
-        log_warn "Network '$NETWORK_NAME' already exists, skipping creation"
+        log_warn "Network '$NETWORK_NAME' already exists"
         return 0
     fi
     
@@ -122,7 +116,7 @@ destroy_network() {
     
     # Check if network exists
     if ! network_exists; then
-        log_warn "Network '$NETWORK_NAME' does not exist, skipping destruction"
+        log_warn "Network '$NETWORK_NAME' does not exist"
         return 0
     fi
 
@@ -135,7 +129,8 @@ create_vm_xml() {
     local serial_log_file="$3"
     local disk_file="$4"
     local seed_iso_file="$5"
-    shift 5
+    local resources_path="$6"
+    shift 6
     local replacements=("$@")
 
     # Validate template file exists
@@ -148,12 +143,12 @@ create_vm_xml() {
     sed -i "s|PATH_TO_DISK_IMAGE_PLACEMENT|${disk_file}|g" "$temp_xml_file"
     sed -i "s|PATH_TO_SEED_ISO_PLACEMENT|${seed_iso_file}|g" "$temp_xml_file"
     sed -i "s|PATH_TO_SERIAL_LOG_PLACEMENT|${serial_log_file}|g" "$temp_xml_file"
+    sed -i "s|PATH_TO_RESOURCES_PLACEMENT|${resources_path}|g" "$temp_xml_file"
 
     # Replace placeholders based on VM type
     if [[ "$template_file" == *"vm-tfw.xml" ]]; then
         sed -i "s|PATH_TO_KERNEL_PLACEMENT|${replacements[0]}|g" "$temp_xml_file"
         sed -i "s|PATH_TO_TEMPESTA_PLACEMENT|${replacements[1]}|g" "$temp_xml_file"
-        sed -i "s|PATH_TO_RESOURCES_PLACEMENT|${replacements[2]}|g" "$temp_xml_file"
     elif [[ "$template_file" == *"vm-test.xml" ]]; then
         sed -i "s|PATH_TO_TEST_PLACEMENT|${replacements[0]}|g" "$temp_xml_file"
     else
@@ -177,7 +172,7 @@ start_vm() {
 
     # Check if VM already exists
     if vm_exists "$vm_name"; then
-        log_warn "VM '$vm_name' is already running, skipping start"
+        log_warn "VM '$vm_name' is already running"
         return 0
     fi
 
@@ -224,7 +219,7 @@ shutdown_vm_forcefully() {
     log_info "Force shutting down VM '$vm_name' ($ip_address)..."
 
     if ! vm_exists "$vm_name"; then
-        log_warn "VM '$vm_name' is not running, shutdown"
+        log_warn "VM '$vm_name' is not running"
         return 0
     fi
 
@@ -243,7 +238,7 @@ shutdown_vm_gracefully() {
     log_info "Shutting down VM '$vm_name' ($ip_address)..."
 
     if ! vm_exists "$vm_name"; then
-        log_warn "VM '$vm_name' is not running, shutdown"
+        log_warn "VM '$vm_name' is not running"
         return 0
     fi
     
@@ -283,7 +278,7 @@ main() {
             --start-vm-tfw)
                 if [[ $# -lt 6 ]]; then
                     log_error "start-vm-tfw requires 6 parameters: \
-                        <disk_image> <seed_iso> <kernel_path> <tempesta_path> <resources_path>"
+                        <disk_image> <seed_iso> <resources_path> <kernel_path> <tempesta_path>"
                     exit 1
                 fi
                 create_vm_xml \
@@ -301,14 +296,14 @@ main() {
             --start-vm-test)
                 if [[ $# -lt 4 ]]; then
                     log_error "start-vm-test requires 3 parameters: \
-                        <disk_image> <seed_iso> <test_path>"
+                        <disk_image> <seed_iso> <resources_path> <test_path>"
                     exit 1
                 fi
                 create_vm_xml \
                     "$VM_TEST_XML_FILE" \
                     "$VM_TEST_XML_FILE_TMP" \
                     "${TMP_DIR}/serial-${VM_TEST_NAME}.log" \
-                    "$2" "$3" "$4" || exit 1
+                    "$2" "$3" "$4" "$5" || exit 1
                 start_vm "$VM_TEST_XML_FILE_TMP" "$VM_TEST_NAME" "$TEST_VM_IP" || exit 1
                 exit 0
                 ;;

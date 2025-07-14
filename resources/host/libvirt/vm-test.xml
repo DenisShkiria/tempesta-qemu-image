@@ -22,6 +22,10 @@
     <suspend-to-mem enabled='no'/>
     <suspend-to-disk enabled='no'/>
   </pm>
+  <memoryBacking>
+    <source type='memfd'/>
+    <access mode='shared'/>
+  </memoryBacking>
   <devices>
     <!-- Main disk drive (virtio) -->
     <disk type='file' device='disk'>
@@ -29,27 +33,34 @@
       <source file='PATH_TO_DISK_IMAGE_PLACEMENT'/>
       <target dev='vda' bus='virtio'/>
     </disk>
-    
-    <!-- Cloud-init seed ISO (virtio) -->
+
+    <!-- Cloud-init seed ISO (ide) -->
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
       <source file='PATH_TO_SEED_ISO_PLACEMENT'/>
-      <target dev='vdb' bus='virtio'/>
+      <target dev='hdc' bus='ide'/>
     </disk>
-    
+
     <!-- Network interface using custom network -->
     <interface type='network'>
       <source network='tempesta-net'/>
       <mac address='52:54:00:12:34:65'/>
       <model type='virtio'/>
     </interface>
-    
+
     <!-- VirtFS mounts -->
     <filesystem type='mount' accessmode='passthrough'>
       <source dir='PATH_TO_TEST_PLACEMENT'/>
       <target dir='tempesta-test'/>
+      <driver type='virtiofs'/>
     </filesystem>
-    
+
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='PATH_TO_RESOURCES_PLACEMENT'/>
+      <target dir='resources'/>
+      <driver type='virtiofs'/>
+    </filesystem>
+
     <!-- Serial console -->
     <serial type='file'>
       <source path='PATH_TO_SERIAL_LOG_PLACEMENT'/>
@@ -59,13 +70,13 @@
       <source path='PATH_TO_SERIAL_LOG_PLACEMENT'/>
       <target type='serial' port='0'/>
     </console>
-    
+
     <!-- Disable video -->
     <video>
       <model type='none'/>
     </video>
-    
+
     <!-- Memory ballooning -->
     <memballoon model='virtio'/>
   </devices>
-</domain> 
+</domain>

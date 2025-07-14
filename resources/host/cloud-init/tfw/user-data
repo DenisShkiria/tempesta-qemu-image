@@ -71,20 +71,11 @@ packages:
     - msr-tools
 
 mounts:
-  - [ "kernel", "/home/dev/kernel",
-      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
-  - [ "tempesta", "/home/dev/tempesta",
-      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
-  - [ "resources", "/home/dev/resources",
-      "9p", "trans=virtio,version=9p2000.L,_netdev,rw,uid=1000,gid=1000", "0", "0" ]
+  - [ "kernel", "/home/dev/kernel", "virtiofs", "defaults", "0", "0" ]
+  - [ "tempesta", "/home/dev/tempesta", "virtiofs", "defaults", "0", "0" ]
+  - [ "resources", "/home/dev/resources", "virtiofs", "defaults", "0", "0" ]
 
 runcmd:
-  # In the "mounts" section, we specify uid=1000 and gid=1000, and we also explicitly
-  # set the dev user's uid to 1000. Unfortunately, cloud-init does not provide a way
-  # to set the GID of the dev group to 1000. Therefore, we must do it manually.
-  # See https://github.com/canonical/cloud-init/issues/2314.
-  - groupmod -g 1000 dev
-
   # In the "mounts" section, we use paths within the /home/dev directory as mount points.
   # Consequently, the dev user's home directory is created before the user is created,
   # and the "useradd" utility does not copy files from the "skel" directory to the home
