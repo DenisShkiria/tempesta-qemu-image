@@ -18,7 +18,6 @@
 #   TEMPESTA_PATH        - Path to the Tempesta directory (default: $(PWD)/../tempesta)
 #   TEST_PATH            - Path to the test directory (default: $(PWD)/../tempesta-test)
 
-# The user that starts the VM (by default, 'libvirt-qemu') should be able to access the following directories:
 KERNEL_PATH ?= $(PWD)/../linux-5.10.35-tfw
 TEMPESTA_PATH ?= $(PWD)/../tempesta
 TEST_PATH ?= $(PWD)/../tempesta-test
@@ -117,7 +116,7 @@ $(IMAGE_FILE_TFW): $(CLOUD_IMAGE_FILE).checked $(SEED_ISO_TFW)
 
 	@echo "Connecting to VM over SSH..."
 	@resources/host/vm.sh --ssh-to-tfw \
-		"bash -s < $(PWD)/resources/host/monitor-cloud-init.sh" || true
+		"bash -s < /home/dev/resources/monitor-cloud-init.sh" || true
 
 	@$(MAKE) shutdown-vm-tfw
 
