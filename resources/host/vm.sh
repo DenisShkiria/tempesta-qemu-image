@@ -185,7 +185,7 @@ start_vm() {
     fi
 
     # Wait for VM to be ready to accept SSH connections
-    if ! wait_for_ssh_ready "$vm_name" "$ip_address"; then
+    if ! wait_for_ssh_ready "$ip_address"; then
         log_error "VM '$vm_name' failed to become ready for SSH connections"
         shutdown_vm_forcefully "$vm_name" "$ip_address"
         return 1
@@ -194,21 +194,20 @@ start_vm() {
 }
 
 wait_for_ssh_ready() {
-    local vm_name="$1"
-    local ip_address="$2"
+    local ip_address="$1"
 
-    log_info "Waiting for VM '$vm_name' ($ip_address) to be ready for SSH connections..."
+    log_info "Waiting for VM ($ip_address) to be ready for SSH connections..."
     
     for i in $(seq 1 "$SSH_WAIT_ATTEMPTS"); do
         if connect_over_ssh "$ip_address" 'exit 0'; then
-            log_success "VM '$vm_name' ready for SSH connections!"
+            log_success "VM ($ip_address) ready for SSH connections!"
             return 0
         fi
-        log_info "Waiting for VM '$vm_name' to be ready for SSH connections ($i/$SSH_WAIT_ATTEMPTS)..."
+        log_info "Waiting for VM ($ip_address) to be ready for SSH connections ($i/$SSH_WAIT_ATTEMPTS)..."
         sleep 1
     done
     
-    log_error "Could not establish SSH connection to VM '$vm_name' ($ip_address) after $SSH_WAIT_ATTEMPTS attempts"
+    log_error "Could not establish SSH connection to VM ($ip_address) after $SSH_WAIT_ATTEMPTS attempts"
     return 1
 }
 
