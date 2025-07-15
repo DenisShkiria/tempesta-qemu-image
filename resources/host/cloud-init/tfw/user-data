@@ -79,6 +79,18 @@ write_files:
     content: |
       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3aQ6pySP/P2PtCPnu/DJP6YuoVyyv8LXwydtONFOwurTZaonH9vPuymFxDQC+S4pvB6OITGSat7lusZAVvQyKShjpUK9bhglmszJUTZN7da5alXFJlWwa/vnHfxqMAWCCwe/pTrfkVYikHp5G/IXpxeQM97Kb5x0lJwV82pOOv2OtMy3zEjXUEHvlU3Ry7ybOsdEPy6WRj17aL56+wbhiEIeXzsAWPmuDv1XEkHypvpxtDqxlM6hF/FWMd8dFM4Co6A4Bgq0dk55w/UFi+GWOSiTZv943T/1tZIpTQfGvmhOZEZi4BIXPxU3UI3u0O1B6dNh2TP38gWknMiBrdf6F tempesta-vm-key
 
+  - path: /home/dev/.bash_aliases
+    owner: dev:dev
+    permissions: '0644'
+    content: |
+      alias v="vim"
+      alias g="git"
+
+      # arrow up
+      bind '"\e[A": history-search-backward'
+      # arrow down
+      bind '"\e[B": history-search-forward'
+
 mounts:
   - [ "kernel", "/home/dev/kernel", "virtiofs", "defaults", "0", "0" ]
   - [ "tempesta", "/home/dev/tempesta", "virtiofs", "defaults", "0", "0" ]
