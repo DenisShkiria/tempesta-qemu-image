@@ -3,15 +3,25 @@
   <name>tempesta-net</name>
   <forward mode="nat"/>
   <bridge name="virbr-tempesta" stp="on" delay="0"/>
-  <ip address="192.168.123.1" netmask="255.255.255.0">
+  <domain name="tempesta-net" localOnly="yes"/>
+  <ip family="ipv4" address="192.168.123.1" prefix="24">
     <dhcp>
-      <range start="192.168.123.10" end="192.168.123.20"/>
+      <range start="192.168.123.2" end="192.168.123.254"/>
       <!-- Static IP reservations -->
       <host mac="52:54:00:12:34:56" name="tempesta-fw" ip="192.168.123.10"/>
       <host mac="52:54:00:12:34:65" name="tempesta-test" ip="192.168.123.11"/>
     </dhcp>
   </ip>
+  <ip family="ipv6" address="fd00:123::1" prefix="64">
+    <dhcp>
+      <range start="fd00:123::2" end="fd00:123::254"/>
+      <!-- Static IPv6 reservations -->
+      <host name="tempesta-fw" ip="fd00:123::10"/>
+      <host name="tempesta-test" ip="fd00:123::11"/>
+    </dhcp>
+  </ip>
   <dns>
     <forwarder addr="8.8.8.8"/>
+    <forwarder addr="2001:4860:4860::8888"/>
   </dns>
 </network>

@@ -1,10 +1,8 @@
 # Makefile for building Tempesta FW kernel in QEMU VM
 # 
 # Available targets:
-#   build-all            - Build all VM images.
 #   build-vm-test        - Build Test VM image.
 #   build-vm-tfw         - Build TFW VM image.
-#   start-all            - Start all VMs.
 #   start-vm-test        - Start Test VM.
 #   start-vm-tfw         - Start TFW VM.
 #   shutdown-all         - Shutdown all VMs and destroy virtual network.
@@ -59,11 +57,6 @@ shutdown-vm-tfw:
 shutdown-vm-test:
 	@resources/host/vm.sh --stop-vm-test
 
-.PHONY: start-all
-start-all:
-	@$(MAKE) start-vm-tfw
-	@$(MAKE) start-vm-test
-
 .PHONY: start-vm-tfw
 start-vm-tfw:
 	@resources/host/vm.sh --start-vm-tfw \
@@ -80,9 +73,6 @@ start-vm-test:
 		$(SEED_ISO_TEST) \
 		$(PWD)/resources/guest \
 		$(TEST_PATH)
-
-.PHONY: build-all
-build-all: $(IMAGE_FILE_TFW) $(IMAGE_FILE_TEST)
 
 .PHONY: build-vm-test
 build-vm-test: $(IMAGE_FILE_TEST)
