@@ -19,11 +19,8 @@ packages:
     - golang-go
     - docker.io
     - apt-transport-https
-    - clickhouse-client
-    - clickhouse-server
     - ca-certificates
     - gnupg
-    - python3-venv
     - libnginx-mod-http-echo
     - libtool
     - net-tools
@@ -103,5 +100,6 @@ runcmd:
   - chown dev:dev /home/dev
   - sudo -u dev cp -r /etc/skel/. /home/dev
 
-  - cd /home/dev/tempesta-test
-  - sudo -u dev python3 ./setup.py
+  # The setup.py script is interactive, so we don't run it here.
+  #- cd /home/dev/tempesta-test
+  #- sudo -u dev python3 ./setup.py

@@ -199,7 +199,7 @@ wait_for_ssh_ready() {
     log_info "Waiting for VM ($ip_address) to be ready for SSH connections..."
     
     for i in $(seq 1 "$SSH_WAIT_ATTEMPTS"); do
-        if connect_over_ssh "$ip_address" 'exit 0'; then
+        if connect_over_ssh "$ip_address" 'exit 0' 2>/dev/null; then
             log_success "VM ($ip_address) ready for SSH connections!"
             return 0
         fi
