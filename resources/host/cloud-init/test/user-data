@@ -100,6 +100,11 @@ runcmd:
   - chown dev:dev /home/dev
   - sudo -u dev cp -r /etc/skel/. /home/dev
 
+  # The 'tempesta-test' expects to use the 'root' user for ssh access to the 'tempesta-fw'. To
+  # keep the configuration simple, I copy the 'dev' user's ssh configuration to the 'root' user's
+  # home directory, so all that works for the 'dev' user also works for the 'root' user.
+  - cp -r /home/dev/.ssh/. /root/.ssh/
+
   # Copy test config without overwriting if it already exists.
   - sudo -u dev cp --update=none /home/dev/resources/tests_config.ini /home/dev/tempesta-test/
 
