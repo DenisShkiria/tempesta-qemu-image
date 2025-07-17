@@ -107,6 +107,10 @@ runcmd:
   - chown dev:dev /home/dev
   - sudo -u dev cp -r /etc/skel/. /home/dev
 
+  # By default, Nginx listens for TCP connections on 0.0.0.0:80, which conflicts with the
+  # tempesta-fw configurations used by tempesta-test. To make the tests pass, we disable Nginx.
+  - systemctl disable --now nginx
+
   # The further steps are the following:
   #- cd /home/dev/resources
   #- sudo -u dev ./build-kernel.sh --kernel-dir /home/dev/kernel
