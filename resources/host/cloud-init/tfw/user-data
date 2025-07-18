@@ -120,6 +120,8 @@ runcmd:
   #- cd /home/dev/resources
   #- sudo -u dev ./build-kernel.sh --kernel-dir /home/dev/kernel
   #- sudo -u dev ./install-kernel.sh ../linux-headers-*.deb ../linux-image-*.deb
+
+  # Then, after restarting with the newly installed kernel, build Tempesta:
   #- cd /home/dev/tempesta
   #- make clean
   #- make all
