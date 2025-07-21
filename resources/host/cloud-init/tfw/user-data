@@ -39,6 +39,7 @@ packages:
     - kdump-tools
     - msr-tools
     - nginx
+    - gdb
 
 write_files:
   - path: /home/dev/.ssh/id_rsa
