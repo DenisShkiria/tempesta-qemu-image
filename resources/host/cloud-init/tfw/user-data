@@ -40,6 +40,7 @@ packages:
     - msr-tools
     - nginx
     - gdb
+    - debhelper-compat
 
 write_files:
   - path: /home/dev/.ssh/id_rsa

@@ -97,6 +97,10 @@ set_base_config_options() {
     set_config_option "CONFIG_BOOTPARAM_HARDLOCKUP_PANIC" "y"
     set_config_option "CONFIG_BOOTPARAM_HARDLOCKUP_PANIC_VALUE" "1"
     set_config_option "CONFIG_DETECT_HUNG_TASK" "y"
+
+    # This seems to be necessary for 6.12.12.
+    comment_config_option "CONFIG_SYSTEM_REVOCATION_LIST"
+    comment_config_option "CONFIG_SYSTEM_REVOCATION_KEYS"
 }
 
 set_debug_config_options() {
