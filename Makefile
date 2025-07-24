@@ -16,7 +16,7 @@
 #   TEMPESTA_PATH        - Path to the Tempesta directory (default: $(PWD)/../tempesta)
 #   TEST_PATH            - Path to the test directory (default: $(PWD)/../tempesta-test)
 
-KERNEL_PATH ?= $(PWD)/../linux-5.10.35-tfw
+KERNEL_PATH ?= $(PWD)/../linux-6.12.12-tfw
 TEMPESTA_PATH ?= $(PWD)/../tempesta
 TEST_PATH ?= $(PWD)/../tempesta-test
 
