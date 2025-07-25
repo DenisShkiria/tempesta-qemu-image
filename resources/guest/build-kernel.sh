@@ -39,14 +39,6 @@ set_config_option() {
 }
 
 set_base_config_options() {
-    # TODO: These options are mentioned in the requirements, but I am not sure if they are
-    # really needed. Also, the CONFIG_DEBUG_INFO_BTF is not set in the CI kernel configs.
-    set_config_option "CONFIG_DEBUG_INFO_BTF" "y"
-    set_config_option "CONFIG_BPF_SYSCALL" "y"
-    set_config_option "CONFIG_BPF_JIT" "y"
-    set_config_option "CONFIG_HAVE_EBPF_JIT" "y"
-    set_config_option "CONFIG_SYN_COOKIES" "y"
-
     # TODO: The instruction says that the CONFIG_SYSTEM_TRUSTED_KEYRING option should be
     # commented out, but the configs used in the CI have it enabled.
     comment_config_option "CONFIG_SYSTEM_TRUSTED_KEYRING"
@@ -98,9 +90,29 @@ set_base_config_options() {
     set_config_option "CONFIG_BOOTPARAM_HARDLOCKUP_PANIC_VALUE" "1"
     set_config_option "CONFIG_DETECT_HUNG_TASK" "y"
 
-    # This seems to be necessary for 6.12.12.
+    # The options bellow seem to be necessary for 6.12.12.
+
     comment_config_option "CONFIG_SYSTEM_REVOCATION_LIST"
     comment_config_option "CONFIG_SYSTEM_REVOCATION_KEYS"
+    comment_config_option "CONFIG_BPF_PRELOAD"
+    comment_config_option "CONFIG_DEBUG_INFO_BTF"
+
+    set_config_option "CONFIG_DEBUG_INFO_NONE" "y"
+    comment_config_option "CONFIG_DEBUG_INFO"
+    comment_config_option "CONFIG_DEBUG_MISC"
+    comment_config_option "CONFIG_DEBUG_INFO_DWARF5"
+    comment_config_option "CONFIG_DEBUG_INFO_COMPRESSED_NONE"
+    comment_config_option "CONFIG_PAHOLE_HAS_SPLIT_BTF"
+    comment_config_option "CONFIG_PAHOLE_HAS_LANG_EXCLUDE"
+    comment_config_option "CONFIG_GDB_SCRIPTS"
+
+    set_config_option "CONFIG_IKCONFIG" "y"
+    set_config_option "CONFIG_IKCONFIG_PROC" "y"
+    set_config_option "CONFIG_FRAME_WARN" "2048"
+    set_config_option "CONFIG_PANIC_ON_OOPS" "y"
+    set_config_option "CONFIG_PANIC_ON_OOPS_VALUE" "1"
+    set_config_option "CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC" "y"
+    set_config_option "CONFIG_BOOTPARAM_HARDLOCKUP_PANIC" "y"
 }
 
 set_debug_config_options() {
