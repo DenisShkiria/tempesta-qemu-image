@@ -88,6 +88,15 @@ write_files:
       # arrow down
       bind '"\e[B": history-search-forward'
 
+  - path: /home/dev/.gitconfig
+    owner: dev:dev
+    permissions: '0644'
+    defer: true
+    content: |
+      [alias]
+      	st = status
+      	br = branch
+
 mounts:
   - [ "tempesta-test", "/home/dev/tempesta-test", "virtiofs", "defaults", "0", "0" ]
   - [ "resources", "/home/dev/resources", "virtiofs", "defaults", "0", "0" ]

@@ -1,7 +1,7 @@
 <!-- https://libvirt.org/format.html -->
 <domain type='kvm'>
   <name>tempesta-test</name>
-  <memory unit='GB'>4</memory>
+  <memory unit='GB'>5</memory>
   <vcpu placement='static'>4</vcpu>
   <cpu mode='host-passthrough'>
     <feature policy='require' name='vmx'/>
